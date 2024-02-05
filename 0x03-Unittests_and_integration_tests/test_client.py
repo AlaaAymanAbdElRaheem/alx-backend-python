@@ -4,13 +4,14 @@
 
 import unittest
 from unittest.mock import patch, PropertyMock, Mock
-from parameterized import parameterized
+from parameterized import parameterized, parameterized_class
 from client import (
     GithubOrgClient,
     access_nested_map,
     get_json,
     memoize,
 )
+import fixtures
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -52,6 +53,31 @@ class TestGithubOrgClient(unittest.TestCase):
         """test has_license"""
         self.assertEqual(
             GithubOrgClient.has_license(repo, license_key), expected)
+
+
+@parameterized_class([
+    {
+        "org_payload": fixtures.TEST_PAYLOAD[0][0],
+        "repos_payload": fixtures.TEST_PAYLOAD[0][1],
+        "expected_repos": fixtures.TEST_PAYLOAD[0][2],
+        "apache2_repos": fixtures.TEST_PAYLOAD[0][3]
+    }
+])
+class TestIntegrationGithubOrgClient(unittest.TestCase):
+    """integration test for GithubOrgClient.public_repos"""
+    @classmethod
+    def setUpClass(cls):
+        """set up class"""
+        cls.get_patcher = patch('requests.get')
+        cls.get = cls.get_patcher.start()
+        cls.get.return_value.json.side_effect = [
+            cls.org_payload, cls.repos_payload
+        ]
+
+    @classmethod
+    def tearDownClass(cls):
+        """tear down class"""
+        cls.get_patcher.stop()
 
 
 if __name__ == "__main__":
